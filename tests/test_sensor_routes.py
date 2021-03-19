@@ -170,6 +170,10 @@ class SensorRoutesTestCases(unittest.TestCase):
         """
         metric = 'min'
 
+        #Test empty payload
+        request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/', data=json.dumps({}))
+        self.assertEqual(request.status_code, 422)
+
         #Test with missing type
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/')
         self.assertEqual(request.status_code, 422)
@@ -212,6 +216,11 @@ class SensorRoutesTestCases(unittest.TestCase):
         we are able to query for a device's max sensor reading.
         """
         metric = 'max'
+
+        #Test empty payload
+        request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/', data=json.dumps({}))
+        self.assertEqual(request.status_code, 422)
+
         #Test with missing type
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/')
         self.assertEqual(request.status_code, 422)
@@ -254,6 +263,11 @@ class SensorRoutesTestCases(unittest.TestCase):
         we are able to query for a device's median sensor reading.
         """
         metric = 'median'
+
+        #Test empty payload
+        request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/', data=json.dumps({}))
+        self.assertEqual(request.status_code, 422)
+
         #Test with missing type
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/')
         self.assertEqual(request.status_code, 422)
@@ -296,6 +310,11 @@ class SensorRoutesTestCases(unittest.TestCase):
         we are able to query for a device's mean sensor reading value.
         """
         metric = 'mean'
+
+        #Test empty payload
+        request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/', data=json.dumps({}))
+        self.assertEqual(request.status_code, 422)
+
         #Test with missing type
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/')
         self.assertEqual(request.status_code, 422)
@@ -340,6 +359,11 @@ class SensorRoutesTestCases(unittest.TestCase):
         sensor reading value.
         """
         metric = 'quartiles'
+
+        #Test empty payload
+        request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/', data=json.dumps({}))
+        self.assertEqual(request.status_code, 422)
+
         #Test with missing type
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/')
         self.assertEqual(request.status_code, 422)
