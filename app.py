@@ -13,6 +13,11 @@ class Readings(Base):
     value = Column(Integer)
     date_created = Column(Integer)
 
+HTTP_Unprocessable_Entity = 422
+sensor_min = 0
+sensor_max = 100
+valid_sensor_values = range(sensor_min,sensor_max+1)
+
 app = Flask(__name__)
 
 # Setup the SQLite DB
@@ -52,8 +57,11 @@ def request_device_readings(device_uuid):
         value = post_data.get('value')
         date_created = post_data.get('date_created', int(time.time()))
 
-        # Insert data into db
-        cur.execute('insert into readings (device_uuid,type,value,date_created) VALUES (?,?,?,?)',
+        if sensor_type not in VALID_SENSOR_TYPES:
+            return HTTP_Unprocessable_Entity, f'Invalid sensor type. Needs to be one of: {VALID_SENSOR_TYPES}'
+        if value not in valid_sensor_range:
+            return HTTP_Unprocessable_Entity, f'Invalid sensor range. Needs to be in: {valid_sensor_range}'
+        # Insert data into db        cur.execute('insert into readings (device_uuid,type,value,date_created) VALUES (?,?,?,?)',
                     (device_uuid, sensor_type, value, date_created))
         
         conn.commit()
