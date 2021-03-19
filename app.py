@@ -1,26 +1,34 @@
 from flask import Flask, render_template, request, Response
 from flask.json import jsonify
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, create_engine
+from sqlalchemy.orm import sessionmaker
 import json
 import sqlite3
 import time
 
-class Readings(Base):
+Base = declarative_base()
+
+class Reading(Base):
     __tablename__ = 'readings'
-    device_uuid = Column(String)
+
+    device_uuid = Column(String, primary_key=True)
     type = Column(String)
     value = Column(Integer)
     date_created = Column(Integer)
 
-HTTP_Unprocessable_Entity = 422
-sensor_min = 0
-sensor_max = 100
-valid_sensor_values = range(sensor_min,sensor_max+1)
+HTTP_UNOROCESSABLE_ENTITY = 422
+SENSOR_MIN = 0
+SENSOR_MAX = 100
+VALID_SENSOR_RANGE = range(SENSOR_MIN,SENSOR_MAX+1)
+VALID_SENSOR_TYPE = ['temperature',
+                      'humidity']
 
 app = Flask(__name__)
 
 # Setup the SQLite DB
+engine = create_engine("sqlite:///database.db")
+session = sessionmaker(bind=engine)
 conn = sqlite3.connect('database.db')
 conn.execute('CREATE TABLE IF NOT EXISTS readings (device_uuid TEXT, type TEXT, value INTEGER, date_created INTEGER)')
 conn.close()
@@ -49,27 +57,35 @@ def request_device_readings(device_uuid):
         conn = sqlite3.connect('database.db')
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
-   
+    post_data = json.loads(request.data)
     if request.method == 'POST':
         # Grab the post parameters
-        post_data = json.loads(request.data)
         sensor_type = post_data.get('type')
         value = post_data.get('value')
         date_created = post_data.get('date_created', int(time.time()))
 
-        if sensor_type not in VALID_SENSOR_TYPES:
-            return HTTP_Unprocessable_Entity, f'Invalid sensor type. Needs to be one of: {VALID_SENSOR_TYPES}'
-        if value not in valid_sensor_range:
-            return HTTP_Unprocessable_Entity, f'Invalid sensor range. Needs to be in: {valid_sensor_range}'
-        # Insert data into db        cur.execute('insert into readings (device_uuid,type,value,date_created) VALUES (?,?,?,?)',
-                    (device_uuid, sensor_type, value, date_created))
+        if sensor_type not in VALID_SENSOR_TYPE:
+            return HTTP_UNOROCESSABLE_ENTITY, ('Invalid sensor type. Needs to be one of: '
+                                              f'{VALID_SENSOR_TYPE}')
+        if value not in VALID_SENSOR_RANGE:
+            return HTTP_UNOROCESSABLE_ENTITY, ('Invalid sensor range. Needs to be in: '
+                                              f'{VALID_SENSOR_RANGE}')
+        # Insert data into db
+        reading = Reading(device_uuid=device_uuid,
+                          type=sensor_type,
+                          value=value,
+                          date_created=date_created)
+        session.add(reading)
+        session.commit()
         
-        conn.commit()
-
         # Return success
         return 'success', 201
     else:
         # Execute the query
+        sensor_type = post_data.get('type')
+        start = post_data.get('start', 0)
+        end = post_data.get('end', int(time.time()))
+        session.query(Reading).filter_by(type=sensor_type, start=start, end=end).all()
         cur.execute('select * from readings where device_uuid="{}"'.format(device_uuid))
         rows = cur.fetchall()
 
@@ -135,7 +151,7 @@ def request_device_readings_quartiles(device_uuid):
 
     return 'Endpoint is not implemented', 501
 
-@app.route('<fill-this-in>', methods = ['GET'])
+#@app.route('<fill-this-in>', methods = ['GET'])
 def request_readings_summary():
     """
     This endpoint allows clients to GET a full summary
