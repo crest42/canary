@@ -150,12 +150,25 @@ def request_device_readings_max(device_uuid):
     * start -> The epoch start time for a sensor being created
     * end -> The epoch end time for a sensor being created
     """
+    data = {}
+    if len(request.data) > 0:
+        data = json.loads(request.data)
+    sensor_type = data.get('type')
+    if sensor_type is None:
+        return 'Missing Payload', HTTP_UNPROCESSABLE_ENTITY
+
     with app.app_context():
         session = get_db_session()
-    type = 'temperature'
-    query = session.query(func.min(Reading.value), Reading.date_created).filter(Reading.device_uuid==device_uuid)
+
+    query = session.query(func.max(Reading.value), Reading.date_created) \
+                   .filter(Reading.device_uuid==device_uuid) \
+                   .filter(Reading.type==sensor_type)
+    if data.get('start') is not None:
+        query = query.filter(Reading.date_created >= data.get('start'))
+    if data.get('end') is not None:
+        query = query.filter(Reading.date_created <= data.get('end'))
     return jsonify([{'device_uuid': device_uuid,
-                     'type': type,
+                     'type': sensor_type,
                      'value': query.one()[0],
                      'date_created': query.one()[1]} for row in query.all()]), 200
 
