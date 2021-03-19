@@ -63,10 +63,17 @@ class SensorRoutesTestCases(unittest.TestCase):
         request = self.client().post('/devices/{}/readings/'.format(self.device_uuid), data=json.dumps(dict()))
 
         self.assertEqual(request.status_code, 422)
-        #Test missing parameter
+        #Test missing parameter 'value'
         request = self.client().post('/devices/{}/readings/'.format(self.device_uuid),
                                      data=json.dumps({
                                         'type': 'temperature',
+                                     }))
+        self.assertEqual(request.status_code, 422)
+
+        #Test missing parameter 'type'
+        request = self.client().post('/devices/{}/readings/'.format(self.device_uuid),
+                                     data=json.dumps({
+                                        'value': 22,
                                      }))
         self.assertEqual(request.status_code, 422)
 
@@ -94,10 +101,16 @@ class SensorRoutesTestCases(unittest.TestCase):
         This test should be implemented. The goal is to test that
         we are able to query for a device's temperature data only.
         """
+        #Test missing parameter
+        request = self.client().get('/devices/{}/readings/'.format(self.device_uuid),
+                                    data=json.dumps({}))
+        self.assertEqual(request.status_code, 422)
+
+        #Test for working case
         request = self.client().get('/devices/{}/readings/'.format(self.device_uuid), data=
-            json.dumps({
-                'type': 'temperature',
-            }))
+                                    json.dumps({
+                                        'type': 'temperature',
+                                    }))
         self.assertEqual(request.status_code, 200)
         self.assertEqual(len(json.loads(request.data)), 4)
 
@@ -106,10 +119,14 @@ class SensorRoutesTestCases(unittest.TestCase):
         This test should be implemented. The goal is to test that
         we are able to query for a device's humidity data only.
         """
+        #Test missing parameter
+        request = self.client().get('/devices/{}/readings/'.format(self.device_uuid),
+                                    data=json.dumps({}))
+        self.assertEqual(request.status_code, 422)
         request = self.client().get('/devices/{}/readings/'.format(self.device_uuid), data=
-            json.dumps({
-                'type': 'humidity',
-            }))
+                                    json.dumps({
+                                        'type': 'humidity',
+                                    }))
         self.assertEqual(request.status_code, 200)
         self.assertEqual(len(json.loads(request.data)), 2)
 
@@ -120,6 +137,8 @@ class SensorRoutesTestCases(unittest.TestCase):
         a specific date range. We should only get the readings
         that were created in this time range.
         """
+
+        #One-Sided-Test if all values >= 10 are returned
         request = self.client().get('/devices/{}/readings/'.format(self.device_uuid), data=
                                     json.dumps({
                                         'start': 10,
@@ -127,6 +146,7 @@ class SensorRoutesTestCases(unittest.TestCase):
         self.assertEqual(request.status_code, 200)
         self.assertEqual(len(json.loads(request.data)), 5)
 
+        #One-Sided-Test if all values <= 40 are returned
         request = self.client().get('/devices/{}/readings/'.format(self.device_uuid), data=
                                     json.dumps({
                                         'end': 40,
@@ -134,10 +154,11 @@ class SensorRoutesTestCases(unittest.TestCase):
         self.assertEqual(request.status_code, 200)
         self.assertEqual(len(json.loads(request.data)), 5)
 
+        #Two-Sided-Test if all values >= 10 and <= 20 are returned
         request = self.client().get('/devices/{}/readings/'.format(self.device_uuid), data=
                                     json.dumps({
-                                        'start': 11,
-                                        'end': 39
+                                        'start': 10,
+                                        'end': 20
                                     }))
         self.assertEqual(request.status_code, 200)
         self.assertEqual(len(json.loads(request.data)), 2)
@@ -148,6 +169,7 @@ class SensorRoutesTestCases(unittest.TestCase):
         we are able to query for a device's min sensor reading.
         """
         metric = 'min'
+
         #Test with missing type
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/')
         self.assertEqual(request.status_code, 422)
@@ -175,14 +197,14 @@ class SensorRoutesTestCases(unittest.TestCase):
         #Test temperatur metric read with date
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'type': 'temperature',
-                                                     'start': 5,
-                                                     'end': 30}))
+                                                     'start': 10,
+                                                     'end': 20}))
         self.assertEqual(request.status_code, 200)
         self.assertDictEqual(json.loads(request.data)[0],
                              {'device_uuid': self.device_uuid,
                               'type': 'temperature',
-                              'value': 22,
-                              'date_created': 5})
+                              'value': 50,
+                              'date_created': 10})
 
     def test_device_readings_max(self):
         """
@@ -201,8 +223,8 @@ class SensorRoutesTestCases(unittest.TestCase):
         self.assertDictEqual(json.loads(request.data)[0],
                              {'device_uuid': self.device_uuid,
                               'type': 'temperature',
-                              'value': -1,
-                              'date_created': -1})
+                              'value': 100,
+                              'date_created': 20})
 
         #Test humidity metric read
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
@@ -211,20 +233,20 @@ class SensorRoutesTestCases(unittest.TestCase):
         self.assertDictEqual(json.loads(request.data)[0],
                              {'device_uuid': self.device_uuid,
                               'type': 'humidity',
-                              'value': -1,
-                              'date_created': -1})
+                              'value': 42,
+                              'date_created': 40})
 
         #Test temperatur metric read with date
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'type': 'temperature',
-                                                     'start': 5,
-                                                     'end': 30}))
+                                                     'start': 10,
+                                                     'end': 20}))
         self.assertEqual(request.status_code, 200)
         self.assertDictEqual(json.loads(request.data)[0],
                              {'device_uuid': self.device_uuid,
                               'type': 'temperature',
-                              'value': -1,
-                              'date_created': -1})
+                              'value': 100,
+                              'date_created': 20})
 
     def test_device_readings_median(self):
         """
@@ -243,8 +265,8 @@ class SensorRoutesTestCases(unittest.TestCase):
         self.assertDictEqual(json.loads(request.data)[0],
                              {'device_uuid': self.device_uuid,
                               'type': 'temperature',
-                              'value': -1,
-                              'date_created': -1})
+                              'value': 36.0,
+                              'date_created': 15})
 
         #Test humidity metric read
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
@@ -253,20 +275,20 @@ class SensorRoutesTestCases(unittest.TestCase):
         self.assertDictEqual(json.loads(request.data)[0],
                              {'device_uuid': self.device_uuid,
                               'type': 'humidity',
-                              'value': -1,
-                              'date_created': -1})
+                              'value': 32.5,
+                              'date_created': 45})
 
         #Test temperatur metric read with date
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'type': 'temperature',
-                                                     'start': 5,
-                                                     'end': 30}))
+                                                     'start': 10,
+                                                     'end': 25}))
         self.assertEqual(request.status_code, 200)
         self.assertDictEqual(json.loads(request.data)[0],
                              {'device_uuid': self.device_uuid,
                               'type': 'temperature',
-                              'value': -1,
-                              'date_created': -1})
+                              'value': 50.0,
+                              'date_created': 10.0})
 
     def test_device_readings_mean(self):
         """
@@ -283,24 +305,24 @@ class SensorRoutesTestCases(unittest.TestCase):
                                     data=json.dumps({'type': 'temperature'}))
         self.assertEqual(request.status_code, 200)
         self.assertDictEqual(json.loads(request.data)[0],
-                             {'value': -1})
+                             {'value': 45.5})
 
         #Test humidity metric read
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'type': 'humidity'}))
         self.assertEqual(request.status_code, 200)
         self.assertDictEqual(json.loads(request.data)[0],
-                             {'value': -1})
+                             {'value': 32.5})
 
 
         #Test temperatur metric read with date
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'type': 'temperature',
-                                                     'start': 5,
-                                                     'end': 30}))
+                                                     'start': 10,
+                                                     'end': 20}))
         self.assertEqual(request.status_code, 200)
         self.assertDictEqual(json.loads(request.data)[0],
-                             {'value': -1})
+                             {'value': 53.33})
 
         self.assertTrue(False)
 
@@ -327,23 +349,23 @@ class SensorRoutesTestCases(unittest.TestCase):
                                     data=json.dumps({'type': 'temperature'}))
         self.assertEqual(request.status_code, 200)
         self.assertDictEqual(json.loads(request.data)[0],
-                             {'quartile_1': -1,
-                              'quartile_3': -1})
+                             {'quartile_1': 19.0,
+                              'quartile_3': 62.5})
 
         #Test humidity metric read
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'type': 'humidity'}))
         self.assertEqual(request.status_code, 200)
         self.assertDictEqual(json.loads(request.data)[0],
-                             {'quartile_1': -1,
-                              'quartile_3': -1})
+                             {'quartile_1': 27.75,
+                              'quartile_3': 37.25})
 
         #Test temperatur metric read with date
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'type': 'temperature',
-                                                     'start': 5,
-                                                     'end': 30}))
+                                                     'start': 10,
+                                                     'end': 20}))
         self.assertEqual(request.status_code, 200)
         self.assertDictEqual(json.loads(request.data)[0],
-                             {'quartile_1': -1,
-                              'quartile_3': -1})
+                             {'quartile_1': 62.5,
+                              'quartile_3': 87.5})
