@@ -58,6 +58,18 @@ class SensorRoutesTestCases(unittest.TestCase):
     def test_device_readings_post(self):
         # Given a device UUID
         # When we make a request with the given UUID to create a reading
+
+        #Test empty payload
+        request = self.client().post('/devices/{}/readings/'.format(self.device_uuid), data=json.dumps(dict()))
+
+        self.assertEqual(request.status_code, 422)
+        #Test missing parameter
+        request = self.client().post('/devices/{}/readings/'.format(self.device_uuid),
+                                     data=json.dumps({
+                                        'type': 'temperature',
+                                     }))
+        self.assertEqual(request.status_code, 422)
+
         request = self.client().post('/devices/{}/readings/'.format(self.device_uuid), data=
             json.dumps({
                 'type': 'temperature',
