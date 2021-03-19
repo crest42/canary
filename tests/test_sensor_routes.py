@@ -101,10 +101,6 @@ class SensorRoutesTestCases(unittest.TestCase):
         This test should be implemented. The goal is to test that
         we are able to query for a device's temperature data only.
         """
-        #Test missing parameter
-        request = self.client().get('/devices/{}/readings/'.format(self.device_uuid),
-                                    data=json.dumps({}))
-        self.assertEqual(request.status_code, 422)
 
         #Test for working case
         request = self.client().get('/devices/{}/readings/'.format(self.device_uuid), data=
@@ -119,10 +115,6 @@ class SensorRoutesTestCases(unittest.TestCase):
         This test should be implemented. The goal is to test that
         we are able to query for a device's humidity data only.
         """
-        #Test missing parameter
-        request = self.client().get('/devices/{}/readings/'.format(self.device_uuid),
-                                    data=json.dumps({}))
-        self.assertEqual(request.status_code, 422)
         request = self.client().get('/devices/{}/readings/'.format(self.device_uuid), data=
                                     json.dumps({
                                         'type': 'humidity',
