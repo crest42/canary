@@ -1,8 +1,17 @@
 from flask import Flask, render_template, request, Response
 from flask.json import jsonify
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, String
 import json
 import sqlite3
 import time
+
+class Readings(Base):
+    __tablename__ = 'readings'
+    device_uuid = Column(String)
+    type = Column(String)
+    value = Column(Integer)
+    date_created = Column(Integer)
 
 app = Flask(__name__)
 
