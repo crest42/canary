@@ -348,6 +348,7 @@ class SensorRoutesTestCases(unittest.TestCase):
         #When we make valid request with dates in the future
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({
+                                        'type': 'temperature',
                                         'start': 10000000,
                                         'end': 20000000
                                     }))
@@ -445,6 +446,7 @@ class SensorRoutesTestCases(unittest.TestCase):
         #When we make valid request with dates in the future
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({
+                                        'type': 'temperature',
                                         'start': 10000000,
                                         'end': 20000000
                                     }))
@@ -627,6 +629,7 @@ class SensorRoutesTestCases(unittest.TestCase):
         #When we make valid request with dates in the future
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({
+                                        'type': 'temperature',
                                         'start': 10000000,
                                         'end': 20000000
                                     }))
