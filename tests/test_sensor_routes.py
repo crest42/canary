@@ -259,7 +259,7 @@ class SensorRoutesTestCases(unittest.TestCase):
         self.assertEqual(request.status_code, 200)
 
         #And receive an empty dict
-        self.assertDictEqual(json.loads(request.data)[0], {})
+        self.assertFalse(json.loads(request.data)[0])
 
     def test_device_readings_min(self):
         """
@@ -357,7 +357,7 @@ class SensorRoutesTestCases(unittest.TestCase):
         self.assertEqual(request.status_code, 200)
 
         #And receive an empty dict
-        self.assertDictEqual(json.loads(request.data)[0], {})
+        self.assertFalse(json.loads(request.data)[0])
 
     def test_device_readings_max(self):
         """
@@ -455,7 +455,7 @@ class SensorRoutesTestCases(unittest.TestCase):
         self.assertEqual(request.status_code, 200)
 
         #And receive an empty dict
-        self.assertDictEqual(json.loads(request.data)[0], {})
+        self.assertListEqual(json.loads(request.data)[0], [])
 
     def test_device_readings_median(self):
         """
@@ -508,8 +508,8 @@ class SensorRoutesTestCases(unittest.TestCase):
         self.assertDictEqual(json.loads(request.data)[0],
                              {'device_uuid': self.device_uuid,
                               'type': 'temperature',
-                              'value': 50,
-                              'date_created': 10})
+                              'value': 22,
+                              'date_created': 5})
 
         #When we make a valid request for 'type' humudity
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
@@ -543,7 +543,8 @@ class SensorRoutesTestCases(unittest.TestCase):
 
         #When we make valid request with dates in the future
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
-                                    json.dumps({
+                                    data=json.dumps({
+                                        'type': 'temperature',
                                         'start': 10000000,
                                         'end': 20000000
                                     }))
@@ -552,7 +553,7 @@ class SensorRoutesTestCases(unittest.TestCase):
         self.assertEqual(request.status_code, 200)
 
         #And receive an empty dict
-        self.assertDictEqual(json.loads(request.data)[0], {})
+        self.assertFalse(json.loads(request.data)[0])
 
     def test_device_readings_mean(self):
         """
@@ -638,7 +639,7 @@ class SensorRoutesTestCases(unittest.TestCase):
         self.assertEqual(request.status_code, 200)
 
         #And receive an empty dict
-        self.assertDictEqual(json.loads(request.data)[0], {})
+        self.assertFalse(json.loads(request.data)[0])
 
     def test_device_readings_mode(self):
         """
