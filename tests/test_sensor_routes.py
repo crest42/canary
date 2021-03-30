@@ -173,7 +173,7 @@ class SensorRoutesTestCases(unittest.TestCase):
         we are able to query for a device's temperature data only.
         """
 
-        #If we make a valid request
+        #When we make a valid request
         request = self.client().get('/devices/{}/readings/'.format(self.device_uuid),
                                     data=json.dumps({
                                         'type': 'temperature',
@@ -211,7 +211,7 @@ class SensorRoutesTestCases(unittest.TestCase):
         that were created in this time range.
         """
 
-        #If we make valid request with a startdate > 10
+        #When we make valid request with a startdate > 10
         request = self.client().get('/devices/{}/readings/'.format(self.device_uuid), data=
                                     json.dumps({
                                         'start': 10,
@@ -223,7 +223,7 @@ class SensorRoutesTestCases(unittest.TestCase):
         #And receive five values
         self.assertEqual(len(json.loads(request.data)), 5)
 
-        #If we make valid request with a startdate < 40
+        #When we make valid request with a startdate < 40
         request = self.client().get('/devices/{}/readings/'.format(self.device_uuid), data=
                                     json.dumps({
                                         'end': 40,
@@ -235,7 +235,7 @@ class SensorRoutesTestCases(unittest.TestCase):
         #And receive five values
         self.assertEqual(len(json.loads(request.data)), 5)
 
-        #If we make valid request with startdate >= 10 and enddate <= 20
+        #When we make valid request with startdate >= 10 and enddate <= 20
         request = self.client().get('/devices/{}/readings/'.format(self.device_uuid), data=
                                     json.dumps({
                                         'start': 10,
@@ -248,6 +248,19 @@ class SensorRoutesTestCases(unittest.TestCase):
         #And receive two values
         self.assertEqual(len(json.loads(request.data)), 2)
 
+        #When we make valid request with dates in the future
+        request = self.client().get('/devices/{}/readings/'.format(self.device_uuid),
+                                    data=json.dumps({
+                                        'start': 10000000,
+                                        'end': 20000000
+                                    }))
+
+        #Then we should receive a 200
+        self.assertEqual(request.status_code, 200)
+
+        #And receive an empty dict
+        self.assertDictEqual(json.loads(request.data)[0], {})
+
     def test_device_readings_min(self):
         """
         This test should be implemented. The goal is to test that
@@ -255,46 +268,46 @@ class SensorRoutesTestCases(unittest.TestCase):
         """
         metric = 'min'
 
-        #If we make an empty request
+        #When we make an empty request
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/', data=json.dumps({}))
 
         #We should receive a 422
         self.assertEqual(request.status_code, 422)
 
-        #If we make a request with missing payload
+        #When we make a request with missing payload
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/')
 
         #We should receive a 422
         self.assertEqual(request.status_code, 422)
 
-        #If we make a request with an invalid 'type' parameter
+        #When we make a request with an invalid 'type' parameter
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'type': 'false'}))
 
         #We should receive a 422
         self.assertEqual(request.status_code, 422)
 
-        #If we make a request with an invalid 'start' parameter
+        #When we make a request with an invalid 'start' parameter
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'start': -1}))
 
         #We should receive a 422
         self.assertEqual(request.status_code, 422)
 
-        #If we make a request with an invalid 'end' parameter
+        #When we make a request with an invalid 'end' parameter
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'end': -1}))
 
         #We should receive a 422
         self.assertEqual(request.status_code, 422)
 
-        #If we make a valid request for temperature values
+        #When we make a valid request for temperature values
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'type': 'temperature'}))
 
         #We should receive a 200
         self.assertEqual(request.status_code, 200)
-
+        
         #And receive the following dict as a result
         self.assertDictEqual(json.loads(request.data)[0],
                              {'device_uuid': self.device_uuid,
@@ -302,7 +315,7 @@ class SensorRoutesTestCases(unittest.TestCase):
                               'value': 10,
                               'date_created': 25})
 
-        #If we make a valid request for humidity values
+        #When we make a valid request for humidity values
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'type': 'humidity'}))
 
@@ -316,7 +329,7 @@ class SensorRoutesTestCases(unittest.TestCase):
                               'value': 23,
                               'date_created': 50})
 
-        #If we make a valid request for temperature values in a certain range
+        #When we make a valid request for temperature values in a certain range
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'type': 'temperature',
                                                      'start': 10,
@@ -332,6 +345,19 @@ class SensorRoutesTestCases(unittest.TestCase):
                               'value': 50,
                               'date_created': 10})
 
+        #When we make valid request with dates in the future
+        request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
+                                    data=json.dumps({
+                                        'start': 10000000,
+                                        'end': 20000000
+                                    }))
+
+        #Then we should receive a 200
+        self.assertEqual(request.status_code, 200)
+
+        #And receive an empty dict
+        self.assertDictEqual(json.loads(request.data)[0], {})
+
     def test_device_readings_max(self):
         """
         This test should be implemented. The goal is to test that
@@ -339,40 +365,40 @@ class SensorRoutesTestCases(unittest.TestCase):
         """
         metric = 'max'
 
-        #If we make an empty request
+        #When we make an empty request
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/', data=json.dumps({}))
 
         #We should receive a 422
         self.assertEqual(request.status_code, 422)
 
-        #If we make a request with missing payload
+        #When we make a request with missing payload
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/')
 
         #We should receive a 422
         self.assertEqual(request.status_code, 422)
 
-        #If we make a request with an invalid 'type' parameter
+        #When we make a request with an invalid 'type' parameter
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'type': 'false'}))
 
         #We should receive a 422
         self.assertEqual(request.status_code, 422)
 
-        #If we make a request with an invalid 'start' parameter
+        #When we make a request with an invalid 'start' parameter
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'start': -1}))
 
         #We should receive a 422
         self.assertEqual(request.status_code, 422)
 
-        #If we make a request with an invalid 'end' parameter
+        #When we make a request with an invalid 'end' parameter
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'end': -1}))
 
         #We should receive a 422
         self.assertEqual(request.status_code, 422)
 
-        #If we make a valid request for temperature
+        #When we make a valid request for temperature
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'type': 'temperature'}))
 
@@ -386,7 +412,7 @@ class SensorRoutesTestCases(unittest.TestCase):
                               'value': 100,
                               'date_created': 20})
 
-        #If we make a valid request for humidity
+        #When we make a valid request for humidity
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'type': 'humidity'}))
 
@@ -400,7 +426,7 @@ class SensorRoutesTestCases(unittest.TestCase):
                               'value': 42,
                               'date_created': 40})
 
-        #If we make a valid request for temperature values in a certain range
+        #When we make a valid request for temperature values in a certain range
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'type': 'temperature',
                                                      'start': 10,
@@ -416,6 +442,19 @@ class SensorRoutesTestCases(unittest.TestCase):
                               'value': 100,
                               'date_created': 20})
 
+        #When we make valid request with dates in the future
+        request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
+                                    data=json.dumps({
+                                        'start': 10000000,
+                                        'end': 20000000
+                                    }))
+
+        #Then we should receive a 200
+        self.assertEqual(request.status_code, 200)
+
+        #And receive an empty dict
+        self.assertDictEqual(json.loads(request.data)[0], {})
+
     def test_device_readings_median(self):
         """
         This test should be implemented. The goal is to test that
@@ -423,70 +462,95 @@ class SensorRoutesTestCases(unittest.TestCase):
         """
         metric = 'median'
 
-        #If we make an empty request
+        #When we make an empty request
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/', data=json.dumps({}))
 
         #We should receive a 422
         self.assertEqual(request.status_code, 422)
 
-        #If we make a request with missing payload
+        #When we make a request with missing payload
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/')
 
         #We should receive a 422
         self.assertEqual(request.status_code, 422)
 
-        #If we make a request with an invalid 'type' parameter
+        #When we make a request with an invalid 'type' parameter
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'type': 'false'}))
 
         #We should receive a 422
         self.assertEqual(request.status_code, 422)
 
-        #If we make a request with an invalid 'start' parameter
+        #When we make a request with an invalid 'start' parameter
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'start': -1}))
 
         #We should receive a 422
         self.assertEqual(request.status_code, 422)
 
-        #If we make a request with an invalid 'end' parameter
+        #When we make a request with an invalid 'end' parameter
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'end': -1}))
 
         #We should receive a 422
         self.assertEqual(request.status_code, 422)
 
-        #Test temperatur metric read
+        #When we make a valid request for 'type' temperature
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'type': 'temperature'}))
+        
+        #We should receive a 200
         self.assertEqual(request.status_code, 200)
+
+        #And receive the following dict as a result
         self.assertDictEqual(json.loads(request.data)[0],
                              {'device_uuid': self.device_uuid,
                               'type': 'temperature',
                               'value': 50,
                               'date_created': 10})
 
-        #Test humidity metric read
+        #When we make a valid request for 'type' humudity
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'type': 'humidity'}))
+        
+        #We should receive a 200
         self.assertEqual(request.status_code, 200)
+        
+        #And receive the following dict as a result
         self.assertDictEqual(json.loads(request.data)[0],
                              {'device_uuid': self.device_uuid,
                               'type': 'humidity',
                               'value': 23,
                               'date_created': 50})
 
-        #Test temperatur metric read with date
+        #When we make a valid request for 'type' temperature and 'start' >= 10 and 'end' <= 25
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'type': 'temperature',
                                                      'start': 10,
                                                      'end': 25}))
+        
+        #We should receive a 200
         self.assertEqual(request.status_code, 200)
+        
+        #And receive the following dict as a result
         self.assertDictEqual(json.loads(request.data)[0],
                              {'device_uuid': self.device_uuid,
                               'type': 'temperature',
                               'value': 50,
                               'date_created': 10})
+
+        #When we make valid request with dates in the future
+        request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
+                                    json.dumps({
+                                        'start': 10000000,
+                                        'end': 20000000
+                                    }))
+
+        #Then we should receive a 200
+        self.assertEqual(request.status_code, 200)
+
+        #And receive an empty dict
+        self.assertDictEqual(json.loads(request.data)[0], {})
 
     def test_device_readings_mean(self):
         """
@@ -495,13 +559,13 @@ class SensorRoutesTestCases(unittest.TestCase):
         """
         metric = 'mean'
 
-#If we make an empty request
+        #When we make an empty request
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/', data=json.dumps({}))
 
         #We should receive a 422
         self.assertEqual(request.status_code, 422)
 
-        #If we make a request with missing payload
+        #When we make a request with missing payload
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/')
 
         #We should receive a 422
@@ -514,43 +578,64 @@ class SensorRoutesTestCases(unittest.TestCase):
         #We should receive a 422
         self.assertEqual(request.status_code, 422)
 
-        #If we make a request with an invalid 'start' parameter
+        #When we make a request with an invalid 'start' parameter
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'start': -1}))
 
         #We should receive a 422
         self.assertEqual(request.status_code, 422)
 
-        #If we make a request with an invalid 'end' parameter
+        #When we make a request with an invalid 'end' parameter
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'end': -1}))
 
         #We should receive a 422
         self.assertEqual(request.status_code, 422)
 
-        #Test temperatur metric read
+        #When we make a valid request for 'type' temperature
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'type': 'temperature'}))
         self.assertEqual(request.status_code, 200)
         self.assertDictEqual(json.loads(request.data)[0],
                              {'value': 45.5})
 
-        #Test humidity metric read
+        #When we make a valid request for 'type' humidity
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'type': 'humidity'}))
+        
+        #We should receive a 200
         self.assertEqual(request.status_code, 200)
+
+        #And receive the following dict as a result
         self.assertDictEqual(json.loads(request.data)[0],
                              {'value': 32.5})
 
 
-        #Test temperatur metric read with date
+        #When we make a valid request for 'type' temperature and 'start' >= 10 and 'end' <= 20
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'type': 'temperature',
                                                      'start': 10,
                                                      'end': 20}))
+       
+        #We should receive a 200
         self.assertEqual(request.status_code, 200)
+
+        #And receive the following dict as a result
         self.assertDictEqual(json.loads(request.data)[0],
                              {'value': 75})
+
+        #When we make valid request with dates in the future
+        request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
+                                    data=json.dumps({
+                                        'start': 10000000,
+                                        'end': 20000000
+                                    }))
+
+        #Then we should receive a 200
+        self.assertEqual(request.status_code, 200)
+
+        #And receive an empty dict
+        self.assertDictEqual(json.loads(request.data)[0], {})
 
     def test_device_readings_mode(self):
         """
@@ -573,20 +658,20 @@ class SensorRoutesTestCases(unittest.TestCase):
         #We should receive a 422
         self.assertEqual(request.status_code, 422)
 
-        #If we make a request with missing payload
+        #When we make a request with missing payload
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/')
 
         #We should receive a 422
         self.assertEqual(request.status_code, 422)
 
-        #If we make a request with an invalid 'type' parameter
+        #When we make a request with an invalid 'type' parameter
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'type': 'false'}))
 
         #We should receive a 422
         self.assertEqual(request.status_code, 422)
 
-        #If we make a request with an invalid 'start' parameter
+        #When we make a request with an invalid 'start' parameter
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'start': -1}))
 
@@ -600,18 +685,22 @@ class SensorRoutesTestCases(unittest.TestCase):
         #We should receive a 422
         self.assertEqual(request.status_code, 422)
 
-        #If we make a request with missing date parameters
+        #When we make a request with missing date parameters
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'type': 'temperature'}))
         #We should receive a 422
         self.assertEqual(request.status_code, 422)
 
-        #Test temperatur metric read with date
+        #When we make a valid request for 'type' temperature and 'start' >= 10 and 'end' <= 20
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'type': 'temperature',
                                                      'start': 10,
                                                      'end': 20}))
+        
+        #We should receive a 200
         self.assertEqual(request.status_code, 200)
+
+        #And receive the following dict as a result
         self.assertDictEqual(json.loads(request.data)[0],
                              {'quartile_1': 50,
                               'quartile_3': 100})
