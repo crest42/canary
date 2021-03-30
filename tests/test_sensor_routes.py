@@ -259,7 +259,7 @@ class SensorRoutesTestCases(unittest.TestCase):
         self.assertEqual(request.status_code, 200)
 
         #And receive an empty dict
-        self.assertFalse(json.loads(request.data)[0])
+        self.assertFalse(json.loads(request.data))
 
     def test_device_readings_min(self):
         """
@@ -309,7 +309,7 @@ class SensorRoutesTestCases(unittest.TestCase):
         self.assertEqual(request.status_code, 200)
         
         #And receive the following dict as a result
-        self.assertDictEqual(json.loads(request.data)[0],
+        self.assertDictEqual(json.loads(request.data),
                              {'device_uuid': self.device_uuid,
                               'type': 'temperature',
                               'value': 10,
@@ -323,7 +323,7 @@ class SensorRoutesTestCases(unittest.TestCase):
         self.assertEqual(request.status_code, 200)
 
         #And receive the following dict as a result
-        self.assertDictEqual(json.loads(request.data)[0],
+        self.assertDictEqual(json.loads(request.data),
                              {'device_uuid': self.device_uuid,
                               'type': 'humidity',
                               'value': 23,
@@ -339,7 +339,7 @@ class SensorRoutesTestCases(unittest.TestCase):
         self.assertEqual(request.status_code, 200)
 
         #And receive the following dict as a result
-        self.assertDictEqual(json.loads(request.data)[0],
+        self.assertDictEqual(json.loads(request.data),
                              {'device_uuid': self.device_uuid,
                               'type': 'temperature',
                               'value': 50,
@@ -357,7 +357,7 @@ class SensorRoutesTestCases(unittest.TestCase):
         self.assertEqual(request.status_code, 200)
 
         #And receive an empty dict
-        self.assertFalse(json.loads(request.data)[0])
+        self.assertFalse(json.loads(request.data))
 
     def test_device_readings_max(self):
         """
@@ -407,7 +407,7 @@ class SensorRoutesTestCases(unittest.TestCase):
         self.assertEqual(request.status_code, 200)
 
         #And receive the following dict as a result
-        self.assertDictEqual(json.loads(request.data)[0],
+        self.assertDictEqual(json.loads(request.data),
                              {'device_uuid': self.device_uuid,
                               'type': 'temperature',
                               'value': 100,
@@ -421,7 +421,7 @@ class SensorRoutesTestCases(unittest.TestCase):
         self.assertEqual(request.status_code, 200)
 
         #And receive the following dict as a result
-        self.assertDictEqual(json.loads(request.data)[0],
+        self.assertDictEqual(json.loads(request.data),
                              {'device_uuid': self.device_uuid,
                               'type': 'humidity',
                               'value': 42,
@@ -437,7 +437,7 @@ class SensorRoutesTestCases(unittest.TestCase):
         self.assertEqual(request.status_code, 200)
 
         #And receive the following dict as a result
-        self.assertDictEqual(json.loads(request.data)[0],
+        self.assertDictEqual(json.loads(request.data),
                              {'device_uuid': self.device_uuid,
                               'type': 'temperature',
                               'value': 100,
@@ -455,7 +455,7 @@ class SensorRoutesTestCases(unittest.TestCase):
         self.assertEqual(request.status_code, 200)
 
         #And receive an empty dict
-        self.assertListEqual(json.loads(request.data)[0], [])
+        self.assertDictEqual(json.loads(request.data), {})
 
     def test_device_readings_median(self):
         """
@@ -505,7 +505,7 @@ class SensorRoutesTestCases(unittest.TestCase):
         self.assertEqual(request.status_code, 200)
 
         #And receive the following dict as a result
-        self.assertDictEqual(json.loads(request.data)[0],
+        self.assertDictEqual(json.loads(request.data),
                              {'device_uuid': self.device_uuid,
                               'type': 'temperature',
                               'value': 22,
@@ -519,7 +519,7 @@ class SensorRoutesTestCases(unittest.TestCase):
         self.assertEqual(request.status_code, 200)
         
         #And receive the following dict as a result
-        self.assertDictEqual(json.loads(request.data)[0],
+        self.assertDictEqual(json.loads(request.data),
                              {'device_uuid': self.device_uuid,
                               'type': 'humidity',
                               'value': 23,
@@ -535,7 +535,7 @@ class SensorRoutesTestCases(unittest.TestCase):
         self.assertEqual(request.status_code, 200)
         
         #And receive the following dict as a result
-        self.assertDictEqual(json.loads(request.data)[0],
+        self.assertDictEqual(json.loads(request.data),
                              {'device_uuid': self.device_uuid,
                               'type': 'temperature',
                               'value': 50,
@@ -553,7 +553,7 @@ class SensorRoutesTestCases(unittest.TestCase):
         self.assertEqual(request.status_code, 200)
 
         #And receive an empty dict
-        self.assertFalse(json.loads(request.data)[0])
+        self.assertFalse(json.loads(request.data))
 
     def test_device_readings_mean(self):
         """
@@ -599,7 +599,7 @@ class SensorRoutesTestCases(unittest.TestCase):
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'type': 'temperature'}))
         self.assertEqual(request.status_code, 200)
-        self.assertDictEqual(json.loads(request.data)[0],
+        self.assertDictEqual(json.loads(request.data),
                              {'value': 45.5})
 
         #When we make a valid request for 'type' humidity
@@ -610,7 +610,7 @@ class SensorRoutesTestCases(unittest.TestCase):
         self.assertEqual(request.status_code, 200)
 
         #And receive the following dict as a result
-        self.assertDictEqual(json.loads(request.data)[0],
+        self.assertDictEqual(json.loads(request.data),
                              {'value': 32.5})
 
 
@@ -624,7 +624,7 @@ class SensorRoutesTestCases(unittest.TestCase):
         self.assertEqual(request.status_code, 200)
 
         #And receive the following dict as a result
-        self.assertDictEqual(json.loads(request.data)[0],
+        self.assertDictEqual(json.loads(request.data),
                              {'value': 75})
 
         #When we make valid request with dates in the future
@@ -639,14 +639,167 @@ class SensorRoutesTestCases(unittest.TestCase):
         self.assertEqual(request.status_code, 200)
 
         #And receive an empty dict
-        self.assertFalse(json.loads(request.data)[0])
+        self.assertFalse(json.loads(request.data))
 
     def test_device_readings_mode(self):
         """
         This test should be implemented. The goal is to test that
         we are able to query for a device's mode sensor reading value.
         """
-        self.assertTrue(False)
+        #When we make a request with an invalid 'type' parameter
+        request = self.client().get('/summary/',
+                                    data=json.dumps({'type': 'false'}))
+
+        #We should receive a 422
+        self.assertEqual(request.status_code, 422)
+
+        #When we make a request with an invalid 'start' parameter
+        request = self.client().get('/summary/',
+                                    data=json.dumps({'start': -1}))
+
+        #We should receive a 422
+        self.assertEqual(request.status_code, 422)
+
+        #When we make a request with an invalid 'end' parameter
+        request = self.client().get('/summary/',
+                                    data=json.dumps({'end': -1}))
+
+        #We should receive a 422
+        self.assertEqual(request.status_code, 422)
+
+        #When we make an empty request
+        request = self.client().get('/summary/', data=json.dumps({}))
+
+        #We should receive a 200
+        self.assertEqual(request.status_code, 200)
+
+        #And receive the following dicts as a result
+        self.assertDictEqual(json.loads(request.data)[0],
+                             {'device_uuid': 'other_uuid',
+                              'number_of_readings': 1,
+                              'min_reading_value': 22,
+                              'max_reading_value': 22,
+                              'median_reading_value': 22,
+                              'mean_reading_value': 22.0,
+                              'quartile_1_value': 22,
+                              'quartile_3_value': 22})
+
+        self.assertDictEqual(json.loads(request.data)[1],
+                             {'device_uuid': self.device_uuid,
+                              'number_of_readings': 6,
+                              'min_reading_value': 10,
+                              'max_reading_value': 100,
+                              'median_reading_value': 42,
+                              'mean_reading_value': 41.17,
+                              'quartile_1_value': 22,
+                              'quartile_3_value': 42})
+
+
+        #When we make a request with missing payload
+        request = self.client().get('/summary/')
+
+        #We should receive a 200
+        self.assertEqual(request.status_code, 200)
+
+        #And receive the following dicts as a result
+        self.assertDictEqual(json.loads(request.data)[0],
+                             {'device_uuid': 'other_uuid',
+                              'number_of_readings': 1,
+                              'min_reading_value': 22,
+                              'max_reading_value': 22,
+                              'median_reading_value': 22,
+                              'mean_reading_value': 22.0,
+                              'quartile_1_value': 22,
+                              'quartile_3_value': 22})
+
+        self.assertDictEqual(json.loads(request.data)[1],
+                             {'device_uuid': self.device_uuid,
+                              'number_of_readings': 6,
+                              'min_reading_value': 10,
+                              'max_reading_value': 100,
+                              'median_reading_value': 42,
+                              'mean_reading_value': 41.17,
+                              'quartile_1_value': 22,
+                              'quartile_3_value': 42})
+     
+        #When we make a valid request for 'type' temperature
+        request = self.client().get('/summary/',
+                                    data=json.dumps({'type': 'temperature'}))
+        
+        #We should receive a 200
+        self.assertEqual(request.status_code, 200)
+
+        #And receive the following dict as a result
+        self.assertDictEqual(json.loads(request.data)[0],
+                             {'device_uuid': 'other_uuid',
+                              'number_of_readings': 1,
+                              'min_reading_value': 22,
+                              'max_reading_value': 22,
+                              'median_reading_value': 22,
+                              'mean_reading_value': 22.0,
+                              'quartile_1_value': 22,
+                              'quartile_3_value': 22})
+
+        self.assertDictEqual(json.loads(request.data)[1],
+                             {'device_uuid': self.device_uuid,
+                              'number_of_readings': 4,
+                              'min_reading_value': 10,
+                              'max_reading_value': 100,
+                              'median_reading_value': 42,
+                              'mean_reading_value': 45.5,
+                              'quartile_1_value': 22,
+                              'quartile_3_value': 42})
+
+        #When we make a valid request for 'type' humudity
+        request = self.client().get('/summary/',
+                                    data=json.dumps({'type': 'humidity'}))
+        
+        #We should receive a 200
+        self.assertEqual(request.status_code, 200)
+        
+        #And receive the following dicts as a result
+        self.assertDictEqual(json.loads(request.data)[0],
+                             {'device_uuid': self.device_uuid,
+                              'number_of_readings': 2,
+                              'min_reading_value': 23,
+                              'max_reading_value': 42,
+                              'median_reading_value': 42,
+                              'mean_reading_value': 32.5,
+                              'quartile_1_value': 22,
+                              'quartile_3_value': 42})
+
+        #When we make a valid request for 'type' temperature and 'start' >= 10 and 'end' <= 25
+        request = self.client().get('/summary/',
+                                    data=json.dumps({'type': 'temperature',
+                                                     'start': 10,
+                                                     'end': 25}))
+        
+        #We should receive a 200
+        self.assertEqual(request.status_code, 200)
+        #And receive the following dict as a result
+        self.assertDictEqual(json.loads(request.data)[0],
+                             {'device_uuid': self.device_uuid,
+                              'number_of_readings': 3,
+                              'min_reading_value': 10,
+                              'max_reading_value': 100,
+                              'median_reading_value': 42,
+                              'mean_reading_value': 53.33,
+                              'quartile_1_value': 22,
+                              'quartile_3_value': 42})
+
+        #When we make valid request with dates in the future
+        request = self.client().get('/summary/',
+                                    data=json.dumps({
+                                        'type': 'temperature',
+                                        'start': 10000000,
+                                        'end': 20000000
+                                    }))
+
+        #Then we should receive a 200
+        self.assertEqual(request.status_code, 200)
+
+        #And receive an empty dict
+        self.assertFalse(json.loads(request.data))
 
     def test_device_readings_quartiles(self):
         """
@@ -705,6 +858,6 @@ class SensorRoutesTestCases(unittest.TestCase):
         self.assertEqual(request.status_code, 200)
 
         #And receive the following dict as a result
-        self.assertDictEqual(json.loads(request.data)[0],
+        self.assertDictEqual(json.loads(request.data),
                              {'quartile_1': 50,
                               'quartile_3': 100})
