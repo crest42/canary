@@ -5,7 +5,7 @@ from flask import Flask, request
 from flask.json import jsonify
 from jsonschema import validate, ValidationError
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, create_engine, func
+from sqlalchemy import Column, Integer, String, create_engine, func, distinct, text
 from sqlalchemy.orm import sessionmaker
 
 Base = declarative_base()
@@ -61,6 +61,18 @@ class Reading(Base):
     date_created = Column(Integer)
 
 app = Flask(__name__)
+app.config['TESTING'] = True
+
+def normalize_quartiles(q):
+    print(q)
+    assert(len(q) <= 4)
+    if len(q) == 1:
+        return [(1,q[0][1]), (2,q[0][1]), (3,q[0][1]), (4,q[0][1])]
+    if len(q) == 2:
+        return [(1,q[0][1]), (2,q[0][1]), (3,q[1][1]), (4,q[1][1])]
+    if len(q) == 3:
+        return [(1,q[0][1]), (2,q[1][1]), (3,q[2][1]), (4,q[2][1])]
+    return [q[0], q[1], q[2], q[3]]
 
 def get_db_session():
     if app.config['TESTING']:
@@ -378,20 +390,37 @@ def request_device_readings_quartiles(device_uuid):
     with app.app_context():
         session = get_db_session()
 
-    query = session.query(Reading.value, Reading.date_created) \
-                   .filter(Reading.device_uuid==device_uuid) \
-                   .filter(Reading.type==sensor_type)
-    if start_date is not None:
-        query = query.filter(Reading.date_created >= start_date)
-    if end_date is not None:
-        query = query.filter(Reading.date_created <= end_date)
-    result = query.all()
-    lower = list(zip(*result))[0].index(numpy.quantile(list(zip(*result))[0], q=0.25, interpolation='nearest'))
-    upper = list(zip(*result))[0].index(numpy.quantile(list(zip(*result))[0], q=0.75, interpolation='nearest'))
-    return jsonify([{'quartile_1': result[lower][0],
-                     'quartile_3': result[upper][0]}]), 200
+    quartile_cte = session.query(Reading.value, func.ntile(4).over(order_by=Reading.value).label('quartiles'))\
+                          .filter(Reading.device_uuid==device_uuid)\
+                          .filter(Reading.type==sensor_type)\
+                          .filter(Reading.date_created >= start_date)\
+                          .filter(Reading.date_created <= end_date)\
+                          .cte('p')
+    query = session.query(quartile_cte.c.quartiles, func.max(quartile_cte.c.value), ).group_by(quartile_cte.c.quartiles)
+    quartiles = normalize_quartiles(query.all())
 
-#@app.route('<fill-this-in>', methods = ['GET'])
+    return jsonify([{'quartile_1': quartiles[0][1],
+                     'quartile_3': quartiles[2][1]}]), 200
+
+request_summary_schema = {
+   'type': 'object',
+   'properties': {
+       'type': {
+            "enum": VALID_SENSOR_TYPES,
+       },
+       'start': {
+           'type': 'number',
+           'minimum': DATE_MIN,
+       },
+       'end': {
+           'type': 'number',
+           'minimum': DATE_MIN,
+       },
+   },
+   'required': []
+}
+
+@app.route('/summary/', methods = ['GET'])
 def request_readings_summary():
     """
     This endpoint allows clients to GET a full summary
@@ -402,8 +431,56 @@ def request_readings_summary():
     * start -> The epoch start time for a sensor being created
     * end -> The epoch end time for a sensor being created
     """
+    data = {}
+    session = None
+    if request.data:
+        try:
+            data = json.loads(request.data)
+        except json.JSONDecodeError:
+            return ('Request contains no valid JSON in POST data'), HTTP_UNPROCESSABLE_ENTITY
+    try:
+        validate(instance=data, schema=request_summary_schema)
+    except ValidationError as validation_error:
+        return (f'Validation Error: {validation_error}'), HTTP_UNPROCESSABLE_ENTITY
 
-    return 'Endpoint is not implemented', 501
+    sensor_type = data.get('type')
+    start_date = data.get('start')
+    end_date = data.get('end')
+
+    with app.app_context():
+        session = get_db_session()
+
+    query = session.query(Reading.device_uuid,
+                          func.max(Reading.value),
+                          func.min(Reading.value),
+                          func.avg(Reading.value),
+                          func.count(),).\
+                    group_by(Reading.device_uuid)
+    if sensor_type is not None:
+        query = query.filter(Reading.type==sensor_type)
+    if start_date is not None:
+        query = query.filter(Reading.date_created >= start_date)
+    if end_date is not None:
+        query = query.filter(Reading.date_created <= end_date)
+    aggregates = dict((i[0], i[1:]) for i in query.all())
+
+    quartile_cte = session.query(Reading.device_uuid, Reading.value, func.ntile(4).over(partition_by=Reading.device_uuid,order_by=Reading.value).label('quartiles')).cte('p')
+    quartile_query = session.query(quartile_cte.c.device_uuid, quartile_cte.c.quartiles, func.max(quartile_cte.c.value), ).group_by(quartile_cte.c.device_uuid, quartile_cte.c.quartiles)
+    quartile_dict = {}
+    for device_uuid, quartile, value in quartile_query.all():
+        quartile_dict.setdefault(device_uuid, []).append((quartile,value))
+    quartiles = dict(map(lambda x: (x[0], normalize_quartiles(x[1])), quartile_dict.items()))
+
+
+    return jsonify([{'device_uuid': value,
+                         'max_reading_value': aggregates[value][0],
+                         'min_reading_value': aggregates[value][1],
+                         'mean_reading_value': aggregates[value][2],
+                         'number_of_readings': aggregates[value][3],
+                         'quartile_1_value': quartiles[value][0][1],
+                         'median_reading_value': quartiles[value][1][1],
+                         'quartile_3_value': quartiles[value][1][1],
+                         } for value in aggregates]), 200
 
 if __name__ == '__main__':
     app.run()
