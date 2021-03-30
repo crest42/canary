@@ -95,6 +95,12 @@ class SensorRoutesTestCases(unittest.TestCase):
         #Then we should receive a 422
         self.assertEqual(request.status_code, 422)
 
+        #If we make a request with non-JSON POST data
+        request = self.client().post('/devices/{}/readings/'.format(self.device_uuid), data="No data")
+
+        #Then we should receive a 422
+        self.assertEqual(request.status_code, 422)
+
         #When we make a request with a missing 'value' parameter
         request = self.client().post('/devices/{}/readings/'.format(self.device_uuid),
                                      data=json.dumps({
@@ -594,21 +600,11 @@ class SensorRoutesTestCases(unittest.TestCase):
         #We should receive a 422
         self.assertEqual(request.status_code, 422)
 
-        #Test temperatur metric read
+        #If we make a request with missing date parameters
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
                                     data=json.dumps({'type': 'temperature'}))
-        self.assertEqual(request.status_code, 200)
-        self.assertDictEqual(json.loads(request.data)[0],
-                             {'quartile_1': 22,
-                              'quartile_3': 50})
-
-        #Test humidity metric read
-        request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
-                                    data=json.dumps({'type': 'humidity'}))
-        self.assertEqual(request.status_code, 200)
-        self.assertDictEqual(json.loads(request.data)[0],
-                             {'quartile_1': 23,
-                              'quartile_3': 42})
+        #We should receive a 422
+        self.assertEqual(request.status_code, 422)
 
         #Test temperatur metric read with date
         request = self.client().get(f'/devices/{self.device_uuid}/readings/{metric}/',
