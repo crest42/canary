@@ -165,7 +165,7 @@ Open Issues (minor):
 - The data is assumed to be in JSON. We could offload the JSON parsing to flask by limiting the requests to Content-Type JSON. This way we could use 'request.json' directly
 - Currently a lot of the unit tests are duplicates. This can be reduce and lead to more readable tests by accumulating common test-cases.
 - The endpoint implementations code is also quiet redundant. There are multiple opportunities to reduce boilerplate code by using utility functions.
-
+- Currently the validations exception from jsonschema is returned in the HTTP response. I cleaner error message may be desireable
 
 Roadmap:
 

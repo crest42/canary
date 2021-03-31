@@ -1,22 +1,22 @@
 import json
 import time
-import numpy
 from flask import Flask, request
 from flask.json import jsonify
 from jsonschema import validate, ValidationError
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, create_engine, func, distinct, text
+from sqlalchemy import Column, Integer, String, create_engine, func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import MultipleResultsFound
 
 Base = declarative_base()
 
-HTTP_UNPROCESSABLE_ENTITY = 422
+HTTP_UNPROCESSABLE_ENTITY = 422 #https://tools.ietf.org/html/rfc4918#section-11.2
 DATE_MIN = 0
 SENSOR_MIN = 0
 SENSOR_MAX = 100
 VALID_SENSOR_TYPES = ['temperature', 'humidity']
 
+#JSONschema for HTTP POST request to /devices/<string:device_uuid>/readings/
 request_device_readings_schema_post = {
    'type': 'object',
    'properties': {
@@ -35,6 +35,7 @@ request_device_readings_schema_post = {
    'required': ['type','value']
 }
 
+#JSONschema for HTTP GET request to /devices/<string:device_uuid>/readings/
 request_device_readings_schema_get = {
    'type': 'object',
    'properties': {
@@ -54,6 +55,7 @@ request_device_readings_schema_get = {
 }
 
 class Reading(Base):
+    """Sqlalchemy ORM Class for readings table"""
     __tablename__ = 'readings'
     id = Column(Integer, primary_key=True, autoincrement=True)
     device_uuid = Column(String)
@@ -62,20 +64,32 @@ class Reading(Base):
     date_created = Column(Integer)
 
 app = Flask(__name__)
-app.config['TESTING'] = True
 
-def normalize_quartiles(q):
-    assert(len(q) <= 4)
-    assert(len(q) > 0)
-    if len(q) == 1:
-        return [(1,) + q[0][1:], (2,) + q[0][1:], (3,) + q[0][1:], (4,) + q[0][1:]]
-    if len(q) == 2:
-        return [(1,) + q[0][1:], (2,) + q[0][1:], (3,) + q[1][1:], (4,) + q[1][1:]]
-    if len(q) == 3:
-        return [(1,) + q[0][1:], (2,) + q[1][1:], (3,) + q[2][1:], (4,) + q[2][1:]]
-    return [q[0], q[1], q[2], q[3]]
+def normalize_quartiles(q_list):
+    """This function normalize quartiles of format [a] [a,b] and [a,b,c] to [a,b,c,d]
+
+    This is necessary since the sql backend may return fewer then 4 quartiles if less then 4 datapoints are available.
+
+    Logic:
+        [a] = [a,a,a,a]
+        [a,b] = [a,a,b,b]
+        [a,b,c] = [a,b,c,c]
+
+    Parameters:
+        q_list: List of quartiles with at least one and a maximum of 4 quartiles.
+    """
+    assert len(q_list) <= 4
+    assert len(q_list) > 0
+    if len(q_list) == 1: #[a] = [a,a,a,a]
+        return [(1,) + q_list[0][1:], (2,) + q_list[0][1:], (3,) + q_list[0][1:], (4,) + q_list[0][1:]]
+    if len(q_list) == 2: #[a,b] = [a,a,b,b]
+        return [(1,) + q_list[0][1:], (2,) + q_list[0][1:], (3,) + q_list[1][1:], (4,) + q_list[1][1:]]
+    if len(q_list) == 3: #[a,b,c] = [a,b,c,c]
+        return [(1,) + q_list[0][1:], (2,) + q_list[1][1:], (3,) + q_list[2][1:], (4,) + q_list[2][1:]]
+    return [q_list[0], q_list[1], q_list[2], q_list[3]]
 
 def get_db_session():
+    """Returns a valid db session for sqlalchemy"""
     if app.config['TESTING']:
         engine = create_engine("sqlite:///test_database.db")
     else:
@@ -109,6 +123,7 @@ def request_device_readings(device_uuid):
             data = json.loads(request.data)
         except json.JSONDecodeError:
             return ('Request contains no valid JSON in POST data'), HTTP_UNPROCESSABLE_ENTITY
+
     if request.method == 'POST':
         try:
             validate(instance=data, schema=request_device_readings_schema_post)
@@ -133,11 +148,12 @@ def request_device_readings(device_uuid):
             validate(instance=data, schema=request_device_readings_schema_get)
         except ValidationError as validation_error:
             return (f'Validation Error: {validation_error}'), HTTP_UNPROCESSABLE_ENTITY
-        # Execute the query
+
         sensor_type = data.get('type')
         start = data.get('start')
         end = data.get('end')
-        query = session.query(Reading).filter(Reading.device_uuid==device_uuid)
+        query = session.query(Reading.device_uuid, Reading.type, Reading.value, Reading.date_created)\
+                       .filter(Reading.device_uuid==device_uuid)
         if sensor_type is not None:
             query = query.filter(Reading.type==sensor_type)
         if start is not None:
@@ -145,16 +161,11 @@ def request_device_readings(device_uuid):
         if end is not None:
             query = query.filter(Reading.date_created <= end)
 
-
         result = query.all()
         if len(result) == 0:
             return jsonify([]), 200
 
-        # Return the JSON
-        return jsonify([{'device_uuid': row.device_uuid,
-                         'type': row.type,
-                         'value': row.value,
-                         'date_created': row.date_created} for row in result]), 200
+        return jsonify([dict(row) for row in result]), 200
 
     return (f'Invalid request method {request.method}'), HTTP_UNPROCESSABLE_ENTITY
 
@@ -206,7 +217,7 @@ def request_device_readings_min(device_uuid):
 
     with app.app_context():
         session = get_db_session()
-    query = session.query(func.min(Reading.value), Reading.date_created) \
+    query = session.query(Reading.device_uuid, Reading.type, func.min(Reading.value).label('value'), Reading.date_created) \
                    .filter(Reading.device_uuid==device_uuid) \
                    .filter(Reading.type==sensor_type)
     if start_date is not None:
@@ -220,13 +231,10 @@ def request_device_readings_min(device_uuid):
     except MultipleResultsFound as exception:
         return (f'Internal Server Error: {exception}'), 500
 
-    if result[0] is None:
+    if not all(result):
         return jsonify({}), 200
 
-    return jsonify({'device_uuid': device_uuid,
-                     'type': sensor_type,
-                     'value': result[0],
-                     'date_created': result[1]}), 200
+    return jsonify(dict(result)), 200
 
 @app.route('/devices/<string:device_uuid>/readings/max/', methods = ['GET'])
 def request_device_readings_max(device_uuid):
@@ -259,7 +267,7 @@ def request_device_readings_max(device_uuid):
     with app.app_context():
         session = get_db_session()
 
-    query = session.query(func.max(Reading.value), Reading.date_created) \
+    query = session.query(Reading.device_uuid, Reading.type, func.max(Reading.value).label('value'), Reading.date_created) \
                    .filter(Reading.device_uuid==device_uuid) \
                    .filter(Reading.type==sensor_type)
     if start_date is not None:
@@ -273,13 +281,10 @@ def request_device_readings_max(device_uuid):
     except MultipleResultsFound as exception:
         return (f'Internal Server Error: {exception}'), 500
 
-    if result[0] is None:
+    if not all(result):
         return jsonify({}), 200
 
-    return jsonify({'device_uuid': device_uuid,
-                     'type': sensor_type,
-                     'value': result[0],
-                     'date_created': result[1]}), 200
+    return jsonify(dict(result)), 200
 
 @app.route('/devices/<string:device_uuid>/readings/median/', methods = ['GET'])
 def request_device_readings_median(device_uuid):
@@ -364,7 +369,7 @@ def request_device_readings_mean(device_uuid):
     with app.app_context():
         session = get_db_session()
 
-    query = session.query(func.round(func.avg(Reading.value),2)) \
+    query = session.query(func.round(func.avg(Reading.value),2).label("value")) \
                    .filter(Reading.device_uuid==device_uuid) \
                    .filter(Reading.type==sensor_type)
     if start_date is not None:
@@ -374,15 +379,15 @@ def request_device_readings_mean(device_uuid):
 
     result = None
     try:
-        result = query.one_or_none()
+        result = dict(query.one_or_none())
     except MultipleResultsFound as exception:
         return (f'Internal Server Error: {exception}'), 500
 
-    if result[0] is None:
+    if result['value'] is None:
         return jsonify({}), 200
+    return jsonify(result), 200
 
-    return jsonify({'value': result[0]}), 200
-
+#JSONschema for HTTP GET request to /devices/<string:device_uuid>/quartiles/
 request_device_readings_quartiles_schema = {
    'type': 'object',
    'properties': {
@@ -443,6 +448,7 @@ def request_device_readings_quartiles(device_uuid):
     return jsonify({'quartile_1': quartiles[0][1],
                      'quartile_3': quartiles[2][1]}), 200
 
+#JSONschema for HTTP GET request to /devices/<string:device_uuid>/summary/
 request_summary_schema = {
    'type': 'object',
    'properties': {
