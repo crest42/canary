@@ -110,7 +110,7 @@ if start_date is not None:
 
 allows us to easily extend the query with the optional parameters, without messing around with manual SQL statements. It was necessary to include a primary key in the table for sqlalchemy's backend.
 
-- [ ] Implementation
+- [x] Implementation
   - [x] The max, median and mean endpoints.
 
 This also benefits from sqlalchemy. Through using sqlalchemy.func.(max|avg|min) the endpoint implementation is almost identical.
@@ -154,9 +154,9 @@ I took the freedom to add additional rows to the test database to make the tests
 
   - [x] Add tests for the new summary endpoint
   - [x] Add unit tests for any missing error cases
-- [ ] README
+- [x] README
   - [x] Explain any design decisions you made and why.
-  - [ ] Imagine you're building the roadmap for this project over the next quarter. What features or updates would you suggest that we prioritize?
+  - [x] Imagine you're building the roadmap for this project over the next quarter. What features or updates would you suggest that we prioritize?
 
 When you're finished, send your git repo link to Michael Klein at michael@canary.is. If you have any questions, please do not hesitate to reach out!
 
