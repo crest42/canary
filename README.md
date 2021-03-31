@@ -79,7 +79,9 @@ Tests can be run via `pytest -v`.
 Your task is to fork this repo and complete the following:
 
 - [x] Add field validation. Only *temperature* and *humidity* sensors are allowed with values between *0* and *100*.
+
 Design rational:
+
 I used jsonschema for input data validation. the benefits are quite obvious. The request data are assumed to be in JSON anyways. By using jsonschema its easy to describe the fields with their limitations in a human readable dataformat and offload the validation to the library.
 This way the parsing on every endpoint can be implemented like:
 
@@ -98,6 +100,7 @@ if request.data:
 I use HTTP_UNPROCESSABLE_ENTITY (422) as an error for syntactical correct request with flawed data. Its defined as a extension for WebDAV[1]. While it is not standard HTTP a sane client should at least fallback to an 4XX error message and a _more_ sane client could use this for better error handling.
 
 - [x] Add logic for query parameters for *type* and *start/end* dates.
+
 I decided to switch the database backend from the sqlite3 python module to sqlalchemy. Using the ORM model of sqlalchemy we can access our database in an object-like fashion. This way something like:
 
 ```
@@ -109,6 +112,7 @@ allows us to easily extend the query with the optional parameters, without messi
 
 - [ ] Implementation
   - [x] The max, median and mean endpoints.
+
 This also benefits from sqlalchemy. Through using sqlalchemy.func.(max|avg|min) the endpoint implementation is almost identical.
 Regarding the median it is a little bit more complicated:
 
@@ -130,9 +134,12 @@ We divide the dataset into 4 equal-sized bins and select the maximum for each bi
 The Median in this example is not well-defined, since the number of values is even. Usually the mean between 4 and 6 = 5 would be used as the median. In our example we define the median in this case to be floor(a,b) = 4. The R language defines not less then 6 different methods of calculating quartiles in such cases. I would argue that this is a valid implementation of quartiles is correct, and gives a good approximation, while being very efficient, since database-level optimization can be used to reduce the overhead of the query to O(1).
 
   - [x] The quartiles endpoint with start/end parameters
+
 As a combination of the quartile calculation above and the primitives used in the other endpoints, this endpoint is trivially implemented.
+
   - [x] Add the path for the summary endpoint
   - [x] Complete the logic for the summary endpoint
+
 In the implementation I used two different queries to retrieve the results.
 
 1. An aggregation query using group_by and min, max, avg etc. to calculate the aggregates grouped by device_uuid
@@ -142,7 +149,9 @@ It could have been possible to reduce code duplication by sharing re-using utili
 
 - [x] Tests
   - [x] Wrap up the stubbed out unit tests with your changes
+
 I took the freedom to add additional rows to the test database to make the tests a bit more meaningful.
+
   - [x] Add tests for the new summary endpoint
   - [x] Add unit tests for any missing error cases
 - [ ] README
