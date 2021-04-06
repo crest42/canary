@@ -125,7 +125,7 @@ WITH p AS (SELECT value, NTILE(4) OVER ( ORDER BY value) AS percentile
 SELECT percentile, MAX(value) as value
 FROM p
 GROUP by percentile;
-``
+```
 
 We divide the dataset into 4 equal-sized bins and select the maximum for each bin. It is important to notice that this approach only selects the correct value approximately. Imagine the following example:
 
